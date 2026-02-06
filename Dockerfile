@@ -1,7 +1,7 @@
-# استخدام نسخة Node.js مستقرة
-FROM node:20-slim
+# استخدام نسخة Node كاملة لتجنب نقص المكتبات
+FROM node:20
 
-# تثبيت Python و curl و ffmpeg (مهم جداً للتعامل مع الفيديوهات)
+# تثبيت الأدوات الأساسية
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -9,23 +9,25 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# تحميل تثبيت yt-dlp مباشرة في نظام التشغيل
+# تثبيت yt-dlp
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
-# إعداد مجلد العمل
 WORKDIR /app
 
-# نسخ ملفات الإعدادات وتثبيت المكتبات
+# نسخ ملفات الحزم أولاً
 COPY package*.json ./
-RUN npm install
+
+# تنفيذ التثبيت مع تجاهل التعارضات البسيطة وتنظيف الكاش
+RUN npm install --legacy-peer-deps
 
 # نسخ باقي ملفات المشروع
 COPY . .
 
-# بناء مشروع Next.js
+# بناء المشروع
 RUN npm run build
 
-# تشغيل السيرفر
 EXPOSE 3000
+
+# تشغيل السيرفر
 CMD ["npm", "start"]
