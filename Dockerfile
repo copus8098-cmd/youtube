@@ -1,29 +1,31 @@
 FROM node:20
 
-# تثبيت الأدوات الضرورية لنظام Linux
+# 1. تثبيت python3 والأدوات اللازمة
+# أضفنا python-is-python3 لضمان أن أمر "python" يعمل
 RUN apt-get update && apt-get install -y \
     python3 \
+    python3-pip \
+    python-is-python3 \
     curl \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# تثبيت yt-dlp في النظام
+# 2. تثبيت yt-dlp العالمي
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app
 
-# نسخ ملفات التعريف فقط
+# 3. نسخ ملف الإعدادات
 COPY package.json ./
 
-# حذف أي ملف lock قديم قد يأتي مع النسخ وتثبيت جديد كلياً
+# 4. التثبيت الآن سينجح لأن المكتبة ستجد أمر "python"
 RUN rm -f package-lock.json && npm install
 
-# نسخ باقي الملفات
+# 5. نسخ باقي الملفات وبناء التطبيق
 COPY . .
-
-# بناء مشروع Next.js
 RUN npm run build
 
 EXPOSE 3000
+
 CMD ["npm", "start"]
