@@ -21,7 +21,7 @@ export default function VideoPage() {
     setVideoData(null)
     
     try {
-      const res = await fetch("/api/video", { // تأكد أن المسار يطابق اسم الملف في api
+      const res = await fetch("/api/audio", { // تأكد أن المسار يطابق اسم الملف في api
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
