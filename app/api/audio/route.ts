@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     const result = await ytdlpCustom(url, {
       dumpSingleJson: true,
-      noCheckCertificates: true,
+      noCheckCertificate: true,
       noWarnings: true,
       // تأكد من مسح أي binaryPath من هنا لأننا وضعناه في الأعلى
     });
