@@ -1,33 +1,48 @@
 import { NextResponse } from "next/server";
-import ytdlp from "yt-dlp-exec";
-import { join } from "path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 export async function POST(req: Request) {
   try {
     const { url } = await req.json();
-    if (!url) return NextResponse.json({ error: "الرابط مطلوب" }, { status: 400 });
+    if (!url) {
+      return NextResponse.json(
+        { error: "الرابط مطلوب" },
+        { status: 400 }
+      );
+    }
 
-    // المسار الذي قمنا بتثبيت yt-dlp فيه داخل الـ Dockerfile
-    const linuxBinaryPath = '/usr/local/bin/yt-dlp';
+    const { stdout } = await execFileAsync(
+      "/usr/local/bin/yt-dlp",
+      [
+        url,
+        "--dump-single-json",
+        "--no-check-certificate",
+        "--no-warnings",
+        "--prefer-free-formats",
+        "--add-header",
+        "referer:youtube.com",
+        "--add-header",
+        "user-agent:googlebot",
+      ],
+      {
+        maxBuffer: 10 * 1024 * 1024, // 10MB أمان
+      }
+    );
 
-    const result = await ytdlp(url, {
-      // إجبار المكتبة على استخدام المسار الصحيح
-      binaryPath: linuxBinaryPath, 
-      dumpSingleJson: true,
-      noCheckCertificates: true,
-      noWarnings: true,
-      preferFreeFormats: true,
-      addHeader: ['referer:youtube.com', 'user-agent:googlebot'],
-    } as any);
-
+    const result = JSON.parse(stdout);
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error("Full Error:", error);
-    
-    // رسالة خطأ توضيحية للمساعدة في التشخيص
-    return NextResponse.json({ 
-      error: "فشل التشغيل: تأكد من اختيار Docker في إعدادات Render",
-      details: error.message 
-    }, { status: 500 });
+    console.error("yt-dlp error:", error);
+
+    return NextResponse.json(
+      {
+        error: "فشل جلب البيانات",
+        details: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
